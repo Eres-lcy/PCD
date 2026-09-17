@@ -146,15 +146,6 @@ bash scripts/inference/gr00t_pcd_mask.sh
 bash scripts/inference/gr00t_pcd_fast.sh
 ```
 
-The OpenVLA OOD launchers use the same naming convention with an `_ood`
-suffix. Common runtime settings can be overridden through environment
-variables, for example:
-
-```bash
-GPU_DEVICES=0,1 NUM_GPUS=2 N_TRAJS=100 \
-    bash scripts/inference/openvla_pcd_fast.sh
-```
-
 ### Torch compile cache
 
 Pi0 reuses persistent Inductor/Triton artifacts from
