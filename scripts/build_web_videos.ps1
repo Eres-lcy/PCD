@@ -19,9 +19,9 @@ $outputRoot = Join-Path $repoRoot 'src\assets\videos_web'
 
 $jobs = @(
   @{ SourceFolder = 'realworld_demo_2x'; OutputFolder = 'realworld_demo_2x'; Mode = 'encode'; VideoFilter = 'scale=498:360:flags=lanczos' },
-  @{ SourceFolder = 'simulation_demo'; OutputFolder = 'simulation_demo_compressed'; Mode = 'encode'; VideoFilter = '' },
+  @{ SourceFolder = 'simulation_demo'; OutputFolder = 'simulation_demo'; Mode = 'encode'; VideoFilter = '' },
   @{ SourceFolder = 'ood_real_videos_2x'; OutputFolder = 'ood_real_videos_2x'; Mode = 'encode'; VideoFilter = 'scale=498:360:flags=lanczos' },
-  @{ SourceFolder = 'ood_sim_videos'; OutputFolder = 'ood_sim_videos_compressed'; Mode = 'encode'; VideoFilter = '' }
+  @{ SourceFolder = 'ood_sim_videos'; OutputFolder = 'ood_sim_videos'; Mode = 'encode'; VideoFilter = '' }
 )
 if ($OnlyOutputFolder) {
   $jobs = @($jobs | Where-Object OutputFolder -eq $OnlyOutputFolder)
@@ -41,9 +41,7 @@ foreach ($job in $jobs) {
   if (-not (Test-Path -LiteralPath $sourceFolder)) {
     throw "Source video folder was not found: $($job.SourceFolder)"
   }
-  if ($sourceFolder -eq $outputFolder) {
-    throw "Source and output folders must differ when creating encoded derivatives: $sourceFolder"
-  }
+  $effectiveMode = if ($sourceFolder -eq $outputFolder) { 'existing' } else { $job.Mode }
   New-Item -ItemType Directory -Force -Path $outputFolder | Out-Null
 
   $inputs = Get-ChildItem -LiteralPath $sourceFolder -Filter '*.mp4' | Sort-Object Name
@@ -53,7 +51,7 @@ foreach ($job in $jobs) {
     $reuseExisting = $false
     if (Test-Path -LiteralPath $output) {
       $existingHash = (Get-FileHash -LiteralPath $output -Algorithm SHA256).Hash
-      if ($job.Mode -eq 'copy' -and $existingHash -eq $sourceHashBefore) {
+      if ($effectiveMode -in @('copy', 'existing') -and $existingHash -eq $sourceHashBefore) {
         $reuseExisting = $true
       } else {
         throw "Refusing to overwrite existing derivative: $output"
@@ -62,9 +60,12 @@ foreach ($job in $jobs) {
 
     if (-not $reuseExisting) {
       $conversionExitCode = 0
-      switch ($job.Mode) {
+      switch ($effectiveMode) {
         'copy' {
           Copy-Item -LiteralPath $input.FullName -Destination $output
+        }
+        'existing' {
+          $reuseExisting = $true
         }
         'faststart' {
           & $FfmpegPath -hide_banner -loglevel error -n `
@@ -118,7 +119,7 @@ foreach ($job in $jobs) {
       source_folder = $job.SourceFolder
       folder = $job.OutputFolder
       file = $input.Name
-      mode = $job.Mode
+      mode = $effectiveMode
       source_sha256 = $sourceHashBefore
       output_sha256 = (Get-FileHash -LiteralPath $output -Algorithm SHA256).Hash
       source_bytes = $input.Length
