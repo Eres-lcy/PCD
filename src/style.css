@@ -18,65 +18,10 @@ body {
   width: 100%;
 }
 
-.hero {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 72px 30px;
-  text-align: center;
-}
-
-.paper-title {
-  max-width: 1100px;
-  margin: 0 auto 36px;
-
-  font-size: 3rem;
-  line-height: 1.2;
-  font-weight: 600;
-  letter-spacing: -0.5px;
-}
-
-.authors {
-  font-size: 22px;
-  line-height: 1.7;
-  margin-bottom: 12px;
-}
-
-.institutions {
-  font-size: 22px;
-  line-height: 1.4;
-  margin-bottom: 18px;
-}
-
-.institutions > div {
-  margin-bottom: 0px;
-}
-
-.extension {
-  margin-top: 16px;
-
-  font-size: 16px;
-  line-height: 1.6;
-  color: #777777;
-}
-
-.status {
-  margin-top: 60px;
-
-  font-size: 16px;
-  color: #888888;
-}
-
-@media (max-width: 700px) {
-  .hero {
-    padding: 48px 20px;
-  }
-
-  .paper-title {
-    font-size: 2.1rem;
-  }
-
-  .authors,
-  .institutions {
-    font-size: 17px;
-  }
-}
+html { scroll-behavior: smooth; scroll-padding-top: 84px; }
+.chapter-band { background: #f7f9fc; border-top: 1px solid #e8edf4; border-bottom: 1px solid #e8edf4; }
+.chapter-overview { padding: 15px 0; }
+.page h2 { color: #202d43; letter-spacing: -.025em; }
+.page h3 { color: #34435a; letter-spacing: -.015em; }
+a:focus-visible { outline: 2px solid #3273dc; outline-offset: 5px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
