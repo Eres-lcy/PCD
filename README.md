@@ -1,6 +1,6 @@
 # Mitigating Spurious Correlations in Robotic Foundation Models via Training-free Policy Contrastive Decoding
 
-Official implementation of the paper "Mitigating Spurious Correlations in Robotic Foundation Models via Training-free Policy Contrastive Decoding".
+Official implementation of the paper "Mitigating Spurious Correlations in Robotic Foundation Models via Training-free Policy Contrastive Decoding", an extended journal version of our ICLR 2026 conference paper, [“Policy Contrastive Decoding for Robotic Foundation Models”](https://koorye.github.io/PCD/). In this extended version, the PCD method introduced in the conference paper is reformulated as **PCD-Mask**.
 
 [[Project]](https://eres-lcy.github.io/PCD)
 
