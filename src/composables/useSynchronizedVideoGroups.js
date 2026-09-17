@@ -1,6 +1,6 @@
 import { nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 
-const BUFFER_TARGET_SECONDS = 2.5
+const BUFFER_TARGET_SECONDS = 1.5
 const BUFFER_POLL_INTERVAL_MS = 120
 const PLAY_RETRY_DELAY_MS = 1500
 

@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { useSynchronizedVideoGroups } from '../composables/useSynchronizedVideoGroups'
 
 // Videos are stored inside the project and bundled by Vite.
-const videos = import.meta.glob('../assets/videos_web/{realworld_demo_2x_compressed,simulation_demo}/*.mp4', {
+const videos = import.meta.glob('../assets/videos_web/{realworld_demo_2x,simulation_demo_compressed}/*.mp4', {
   eager: true, query: '?url', import: 'default',
 })
 
@@ -16,15 +16,15 @@ const realWorldTasks = [
   { id: 'cube', title: 'Place Cube', mask: '12.4', fast: '10.3' },
 ]
 const pages = [
-  { title: 'Real-World Demonstrations', folder: 'realworld_demo_2x_compressed', speed: '2×', ratio: '498 / 360', tasks: realWorldTasks },
-  { title: 'Simulation(SimplerEnv) Demonstrations', folder: 'simulation_demo', speed: '1×', ratio: '640 / 512', tasks: [
+  { title: 'Real-World Demonstrations', folder: 'realworld_demo_2x', speed: '2×', ratio: '498 / 360', tasks: realWorldTasks },
+  { title: 'Simulation(SimplerEnv) Demonstrations', folder: 'simulation_demo_compressed', speed: '1×', ratio: '640 / 512', tasks: [
     { id: 'close_drawer', title: 'Close Drawer' },
     { id: 'move_near', title: 'Move Near' },
     { id: 'open_drawer', title: 'Open Drawer' },
     { id: 'pick_can', title: 'Coke Can' },
     { id: 'place_apple', title: 'Apple' },
   ] }, 
-  { title: 'Simulation(SimplerEnv) Demonstrations', folder: 'simulation_demo', speed: '1×', ratio: '640 / 480', tasks: [
+  { title: 'Simulation(SimplerEnv) Demonstrations', folder: 'simulation_demo_compressed', speed: '1×', ratio: '640 / 480', tasks: [
     { id: 'put_carrot', title: 'Carrot Plate' },
     { id: 'eggplant', title: 'Eggplant Basket' },
     { id: 'spoon', title: 'Spoon Towel' },

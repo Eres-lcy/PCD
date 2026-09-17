@@ -18,10 +18,10 @@ $sourceRoot = Join-Path $repoRoot 'src\assets\videos'
 $outputRoot = Join-Path $repoRoot 'src\assets\videos_web'
 
 $jobs = @(
-  @{ SourceFolder = 'realworld_demo_2x'; OutputFolder = 'realworld_demo_2x_compressed'; Mode = 'encode' },
-  @{ SourceFolder = 'simulation_demo'; OutputFolder = 'simulation_demo'; Mode = 'faststart' },
-  @{ SourceFolder = 'ood_real_videos_2x'; OutputFolder = 'ood_real_videos_2x'; Mode = 'encode' },
-  @{ SourceFolder = 'ood_sim_videos'; OutputFolder = 'ood_sim_videos'; Mode = 'faststart' }
+  @{ SourceFolder = 'realworld_demo_2x'; OutputFolder = 'realworld_demo_2x'; Mode = 'encode'; VideoFilter = 'scale=498:360:flags=lanczos' },
+  @{ SourceFolder = 'simulation_demo'; OutputFolder = 'simulation_demo_compressed'; Mode = 'encode'; VideoFilter = '' },
+  @{ SourceFolder = 'ood_real_videos_2x'; OutputFolder = 'ood_real_videos_2x'; Mode = 'encode'; VideoFilter = 'scale=498:360:flags=lanczos' },
+  @{ SourceFolder = 'ood_sim_videos'; OutputFolder = 'ood_sim_videos_compressed'; Mode = 'encode'; VideoFilter = '' }
 )
 if ($OnlyOutputFolder) {
   $jobs = @($jobs | Where-Object OutputFolder -eq $OnlyOutputFolder)
@@ -35,6 +35,15 @@ $report = @()
 foreach ($job in $jobs) {
   $sourceFolder = Join-Path $sourceRoot $job.SourceFolder
   $outputFolder = Join-Path $outputRoot $job.OutputFolder
+  if (-not (Test-Path -LiteralPath $sourceFolder)) {
+    $sourceFolder = Join-Path $outputRoot $job.SourceFolder
+  }
+  if (-not (Test-Path -LiteralPath $sourceFolder)) {
+    throw "Source video folder was not found: $($job.SourceFolder)"
+  }
+  if ($sourceFolder -eq $outputFolder) {
+    throw "Source and output folders must differ when creating encoded derivatives: $sourceFolder"
+  }
   New-Item -ItemType Directory -Force -Path $outputFolder | Out-Null
 
   $inputs = Get-ChildItem -LiteralPath $sourceFolder -Filter '*.mp4' | Sort-Object Name
@@ -64,14 +73,21 @@ foreach ($job in $jobs) {
           $conversionExitCode = $LASTEXITCODE
         }
         'encode' {
-          & $FfmpegPath -hide_banner -loglevel error -n `
-            -i $input.FullName -map '0:v:0' -an `
-            -vf 'scale=498:360:flags=lanczos' `
-            -c:v libx264 -preset slow -crf 25 `
-            -maxrate 1000k -bufsize 2000k `
-            -pix_fmt yuv420p -profile:v high `
-            -force_key_frames 'expr:gte(t,n_forced*2)' `
-            -movflags '+faststart' $output
+          $encodeArgs = @(
+            '-hide_banner', '-loglevel', 'error', '-n',
+            '-i', $input.FullName, '-map', '0:v:0', '-an'
+          )
+          if ($job.VideoFilter) {
+            $encodeArgs += @('-vf', $job.VideoFilter)
+          }
+          $encodeArgs += @(
+            '-c:v', 'libx264', '-preset', 'slow', '-crf', '25',
+            '-maxrate', '1000k', '-bufsize', '2000k',
+            '-pix_fmt', 'yuv420p', '-profile:v', 'high',
+            '-force_key_frames', 'expr:gte(t,n_forced*2)',
+            '-movflags', '+faststart', $output
+          )
+          & $FfmpegPath @encodeArgs
           $conversionExitCode = $LASTEXITCODE
         }
         default {

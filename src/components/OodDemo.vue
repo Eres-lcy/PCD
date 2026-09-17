@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { useSynchronizedVideoGroups } from '../composables/useSynchronizedVideoGroups'
 
 // Videos are stored inside the project and bundled by Vite.
-const videos = import.meta.glob('../assets/videos_web/{ood_real_videos_2x,ood_sim_videos}/*.mp4', {
+const videos = import.meta.glob('../assets/videos_web/{ood_real_videos_2x,ood_sim_videos_compressed}/*.mp4', {
   eager: true, query: '?url', import: 'default',
 })
 
@@ -16,7 +16,7 @@ const pages = [
     { id: 'texture', title: 'Table Texture' },
     { id: 'background', title: 'Background' },
   ] },
-  { title: 'Simulation (SimplerEnv) Robustness Demonstrations', folder: 'ood_sim_videos', speed: '1×', ratio: '640 / 512', tasks: [
+  { title: 'Simulation (SimplerEnv) Robustness Demonstrations', folder: 'ood_sim_videos_compressed', speed: '1×', ratio: '640 / 512', tasks: [
     { id: 'light', title: 'Spatial Relation (Light)' },
     { id: 'drawer', title: 'Spatial Relation (Handle)' },
     { id: 'brightness', title: 'Low Brightness' },
