@@ -1,8 +1,9 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { computed, ref } from 'vue'
+import { useSynchronizedVideoGroups } from '../composables/useSynchronizedVideoGroups'
 
 // Videos are stored inside the project and bundled by Vite.
-const videos = import.meta.glob('../assets/videos/{realworld_demo_2x,simulation_demo}/*.mp4', {
+const videos = import.meta.glob('../assets/videos_web/{realworld_demo_2x_compressed,simulation_demo}/*.mp4', {
   eager: true, query: '?url', import: 'default',
 })
 
@@ -15,7 +16,7 @@ const realWorldTasks = [
   { id: 'cube', title: 'Place Cube', mask: '12.4', fast: '10.3' },
 ]
 const pages = [
-  { title: 'Real-World Demonstrations', folder: 'realworld_demo_2x', speed: '2×', ratio: '498 / 360', tasks: realWorldTasks },
+  { title: 'Real-World Demonstrations', folder: 'realworld_demo_2x_compressed', speed: '2×', ratio: '498 / 360', tasks: realWorldTasks },
   { title: 'Simulation(SimplerEnv) Demonstrations', folder: 'simulation_demo', speed: '1×', ratio: '640 / 512', tasks: [
     { id: 'close_drawer', title: 'Close Drawer' },
     { id: 'move_near', title: 'Move Near' },
@@ -39,204 +40,21 @@ const methods = computed(() => [
   { id: 'mask', label: '+ PCD-Mask', file: 'pcd', outcome: 'success', outcomeLabel: 'Success', outcomeSymbol: '✓' },
   { id: 'fast', label: '+ PCD-Fast', file: 'plcd', outcome: 'success', outcomeLabel: 'Success', outcomeSymbol: '✓' },
 ])
-const allTasks = pages.flatMap(page => page.tasks)
-const state = reactive(Object.fromEntries(allTasks.map(task => [task.key, 'loading'])))
-const groups = Object.fromEntries(allTasks.map(task => [task.key, {
-  players: {}, ready: new Set(), ended: new Set(), retryTimer: null,
-}]))
-const sectionElement = ref(null)
-const sectionActivated = ref(false)
-const sectionVisible = ref(false)
-let disposed = false
-let generation = 0
-let activationObserver = null
-let visibilityObserver = null
-
-function changePage(direction) {
-  generation++
-  Object.values(groups).forEach(group => {
-    clearTimeout(group.retryTimer)
-    Object.values(group.players).forEach(video => video.pause())
-    group.players = {}
-    group.ready.clear()
-    group.ended.clear()
-  })
-  Object.keys(state).forEach(key => { state[key] = 'loading' })
-  pageIndex.value = (pageIndex.value + direction + pages.length) % pages.length
-}
-
-function isCurrentTask(task) {
-  return !disposed && tasks.value.some(item => item.key === task)
-}
-
-function isActive(task) {
-  return sectionVisible.value && isCurrentTask(task)
-}
+const {
+  changePage,
+  onBuffering,
+  onEnded,
+  onError,
+  onReady,
+  sectionActivated,
+  sectionElement,
+  setPlayer,
+  state,
+} = useSynchronizedVideoGroups({ pages, pageIndex, tasks })
 
 function videoSource(task, method) {
-  return videos[`../assets/videos/${currentPage.value.folder}/${task.id}_${method.file}.mp4`]
+  return videos[`../assets/videos_web/${currentPage.value.folder}/${task.id}_${method.file}.mp4`]
 }
-
-function setPlayer(task, method, element) {
-  if (element) groups[task].players[method] = element
-}
-
-function onReady(task, method) {
-  if (!isCurrentTask(task)) return
-  groups[task].ready.add(method)
-  if (sectionVisible.value && groups[task].ready.size === 3 && state[task] === 'loading') restart(task)
-}
-
-async function restart(task) {
-  if (!isActive(task) || state[task] === 'starting') return
-  const startedGeneration = generation
-  const group = groups[task]
-  const players = Object.values(group.players)
-  if (players.length !== 3 || players.some(video => video.error)) return
-  clearTimeout(group.retryTimer)
-  state[task] = 'starting'
-  group.ended.clear()
-  for (const video of players) {
-    video.pause()
-    video.currentTime = 0
-    video.muted = true
-    video.defaultMuted = true
-    video.playbackRate = 1 // Real-world files are already 2×; simulation files stay at 1×.
-  }
-  // Start all three in the same turn; play() waits for each video's seek to finish.
-  const results = await Promise.allSettled(players.map(video => video.play()))
-  if (disposed || startedGeneration !== generation) return
-  if (!sectionVisible.value) {
-    players.forEach(video => video.pause())
-    if (state[task] !== 'error') state[task] = 'paused'
-    return
-  }
-  if (state[task] === 'error' || results.some(result => result.status === 'rejected')) {
-    players.forEach(video => video.pause())
-    if (state[task] !== 'error') {
-      state[task] = 'waiting'
-      // Retry a temporarily interrupted start without requiring a manual button.
-      group.retryTimer = setTimeout(() => restart(task), 1500)
-    }
-  } else {
-    state[task] = 'playing'
-  }
-}
-
-async function resume(task) {
-  if (!isActive(task) || state[task] === 'error') return
-  const startedGeneration = generation
-  const group = groups[task]
-  const entries = Object.entries(group.players)
-  if (entries.length !== 3 || entries.some(([, video]) => video.error)) return
-
-  entries.forEach(([method, video]) => {
-    if (video.readyState >= 3) group.ready.add(method)
-  })
-  if (group.ready.size !== 3) return
-  if (state[task] === 'loading' || state[task] === 'waiting') {
-    restart(task)
-    return
-  }
-
-  const activePlayers = entries
-    .filter(([method, video]) => !group.ended.has(method) && !video.ended)
-    .map(([, video]) => video)
-  if (activePlayers.length === 0) {
-    restart(task)
-    return
-  }
-
-  state[task] = 'starting'
-  const results = await Promise.allSettled(activePlayers.map(video => video.play()))
-  if (disposed || startedGeneration !== generation) return
-  if (!sectionVisible.value) {
-    activePlayers.forEach(video => video.pause())
-    if (state[task] !== 'error') state[task] = 'paused'
-    return
-  }
-  if (results.some(result => result.status === 'rejected')) {
-    activePlayers.forEach(video => video.pause())
-    state[task] = 'waiting'
-    clearTimeout(group.retryTimer)
-    group.retryTimer = setTimeout(() => resume(task), 1500)
-  } else {
-    state[task] = 'playing'
-  }
-}
-
-function pauseForVisibility() {
-  for (const task of tasks.value) {
-    const group = groups[task.key]
-    clearTimeout(group.retryTimer)
-    Object.values(group.players).forEach(video => video.pause())
-    if (['starting', 'playing', 'waiting'].includes(state[task.key])) {
-      state[task.key] = 'paused'
-    }
-  }
-}
-
-function resumeVisibleGroups() {
-  for (const task of tasks.value) {
-    const group = groups[task.key]
-    Object.entries(group.players).forEach(([method, video]) => {
-      if (video.readyState >= 3) group.ready.add(method)
-    })
-    if (group.ready.size === 3) resume(task.key)
-  }
-}
-
-function onEnded(task, method) {
-  if (!isCurrentTask(task)) return
-  // A finished video holds its final frame while its two peers continue.
-  groups[task].ended.add(method)
-  if (isActive(task) && groups[task].ended.size === 3 && state[task] === 'playing') restart(task)
-}
-
-function onError(task) {
-  if (!isCurrentTask(task)) return
-  clearTimeout(groups[task].retryTimer)
-  state[task] = 'error'
-  Object.values(groups[task].players).forEach(video => video.pause())
-}
-
-onMounted(() => {
-  activationObserver = new IntersectionObserver(entries => {
-    if (entries[0]?.isIntersecting) {
-      sectionActivated.value = true
-      activationObserver?.disconnect()
-    }
-  }, { rootMargin: '400px 0px' })
-
-  visibilityObserver = new IntersectionObserver(async entries => {
-    const entry = entries[0]
-    const visible = Boolean(entry?.isIntersecting && entry.intersectionRatio >= 0.05)
-    if (visible === sectionVisible.value) return
-    sectionVisible.value = visible
-    if (visible) {
-      sectionActivated.value = true
-      await nextTick()
-      resumeVisibleGroups()
-    } else {
-      pauseForVisibility()
-    }
-  }, { threshold: [0, 0.05] })
-
-  if (sectionElement.value) {
-    activationObserver.observe(sectionElement.value)
-    visibilityObserver.observe(sectionElement.value)
-  }
-})
-
-onBeforeUnmount(() => {
-  disposed = true
-  activationObserver?.disconnect()
-  visibilityObserver?.disconnect()
-  Object.values(groups).forEach(group => {
-    clearTimeout(group.retryTimer)
-    Object.values(group.players).forEach(video => video.pause())
-  })
-})
 </script>
 
 <template>
@@ -272,7 +90,8 @@ onBeforeUnmount(() => {
                     :aria-label="`${task.title} — ${method.label}, ${method.outcomeLabel}, ${currentPage.speed} speed`"
                     :data-task="task.id" :data-method="method.id"
                     muted playsinline preload="metadata" width="498" height="360"
-                    @canplay="onReady(task.key, method.id)" @ended="onEnded(task.key, method.id)"
+                    @canplay="onReady(task.key, method.id)" @waiting="onBuffering(task.key)"
+                    @stalled="onBuffering(task.key)" @ended="onEnded(task.key, method.id)"
                     @error="onError(task.key)" />
                   <span class="outcome-badge" :class="`outcome-${method.outcome}`">
                     <span aria-hidden="true">{{ method.outcomeSymbol }}</span>
