@@ -155,6 +155,8 @@ each Python, PyTorch, CUDA, and GPU architecture combination. Set
 
 ## Acknowledgements
 
+This repository extends the codebase released with the conference version of PCD. For implementation details and discussions related to shared components, please refer to the [conference-version repository](https://github.com/Koorye/PCD).
+
 Our work is built upon the following open-source projects: [SimplerEnv](https://github.com/simpler-env/SimplerEnv), [OpenVLA](https://github.com/openvla/openvla), [Open Pi-0](https://github.com/allenzren/open-pi-zero), [Grounded SAM2](https://github.com/IDEA-Research/Grounded-SAM-2), [YOLO World](https://github.com/AILab-CVC/YOLO-World), [SED](https://github.com/xb534/SED), [Inpaint Anything](https://github.com/geekyutao/Inpaint-Anything).
 We thank the authors for releasing their code. If you use our model and code, please consider citing these works as well.
 
