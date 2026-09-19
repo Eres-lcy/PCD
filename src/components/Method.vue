@@ -92,10 +92,12 @@ import fastImage from '../assets/images/web/PCD-Fast.png'
           <p>
             The same pretrained policy processes both the original and object-masked
             observations, and PCD contrasts the resulting action predictions to
-            amplify object-relevant decision cues. Autoregressive policies directly
-            use their native action probabilities, while <strong>KDE-PM</strong>
-            approximates action distributions for flow-matching policies, enabling
-            PCD-Mask to operate with black-box policy access.
+            amplify object-relevant decision cues. Autoregressive policies use their
+            native action probabilities, whereas <strong>KDE-PM</strong> approximates
+            action distributions for flow-matching policies. Because both mechanisms
+            rely only on policy outputs, PCD-Mask requires neither access to internal
+            activations nor modification of model parameters, enabling
+            <strong>black-box policy access</strong>.
           </p>
 
         </div>
@@ -120,19 +122,17 @@ import fastImage from '../assets/images/web/PCD-Fast.png'
           PCD-Fast
         </h3>
 
-        <p class="variant-subtitle">
-          Efficient Contrastive Decoding in a Single Forward Pass
-        </p>
-
         <div class="variant-description">
 
           <p>
             <strong>PCD-Fast</strong> constructs the object-ignored representation
-            directly from intermediate policy features, avoiding observation
-            inpainting and the additional policy forward pass required by PCD-Mask.
-            <strong>Adaptive Contrastive Layer Selection (ACLS)</strong> adaptively
-            identifies an intermediate representation with reduced target-object
-            reliance while preserving meaningful action information.
+            directly from intermediate policy features. It reuses features from the
+            original computation and performs contrastive decoding in
+            <strong>a single policy forward pass</strong>, eliminating observation
+            inpainting and an additional policy evaluation.
+            <strong>Adaptive Contrastive Layer Selection (ACLS)</strong> identifies
+            an intermediate representation with reduced target-object reliance while
+            preserving meaningful action information.
           </p>
 
           <p>
@@ -319,17 +319,6 @@ import fastImage from '../assets/images/web/PCD-Fast.png'
   font-size: 26px;
   line-height: 1.3;
   font-weight: 600;
-}
-
-
-.variant-subtitle {
-  margin: 0 0 20px;
-
-  color: #4f6fae;
-
-  font-size: 18px;
-  line-height: 1.5;
-  font-weight: 500;
 }
 
 

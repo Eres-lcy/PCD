@@ -2,10 +2,10 @@
   <section class="highlights">
     <div class="highlight-grid">
 
-      <!-- 1. Unified framework -->
+      <!-- 1. Complementary variants -->
       <div class="highlight-card framework-card">
         <div class="framework-value">
-          Unified Framework
+          Complementary Variants
         </div>
 
         <div class="framework-variants" aria-label="PCD framework variants">
@@ -21,8 +21,8 @@
       </div>
 
 
-      <!-- 2. Real-world results -->
-      <div class="highlight-card">
+      <!-- 3. Real-world results -->
+      <div class="highlight-card realworld-card">
         <div class="dual-values">
           <div class="method-result">
             <div class="result-value">+46.9%</div>
@@ -44,7 +44,7 @@
       </div>
 
 
-      <!-- 3. Simulation results: rolling -->
+      <!-- 2. Simulation results: rolling -->
       <div class="highlight-card simulation-card">
 
         <Transition name="fade" mode="out-in">
@@ -157,6 +157,11 @@ onBeforeUnmount(() => {
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
 }
+
+
+.framework-card { order: 1; }
+.simulation-card { order: 2; }
+.realworld-card { order: 3; }
 
 
 /* -------------------------
